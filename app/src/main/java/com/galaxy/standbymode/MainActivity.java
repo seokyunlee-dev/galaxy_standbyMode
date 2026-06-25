@@ -2,18 +2,18 @@ package com.galaxy.standbymode;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.content.ContentUris;
 import android.provider.CalendarContract;
 import android.provider.Settings;
 import android.util.Log;
@@ -22,10 +22,8 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,11 +34,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,23 +45,30 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
 
-    // 미디어 정보 브로드캐스트 수신기
+    // 미디어 및 일반 알림 수신기
     private BroadcastReceiver mediaReceiver;
+    private BroadcastReceiver notiReceiver;
+    private MediaController mediaController;
+    private MediaController.Callback mediaCallback;
 
     // Handler for periodic updates
     private final Handler updateHandler = new Handler(Looper.getMainLooper());
     private Runnable calendarUpdateRunnable;
+    private Runnable mediaProgressRunnable;
+    private boolean isUpdateRunning = false;
 
     // 현재 미디어 상태 캐시
     private String currentTitle = "";
     private String currentArtist = "";
     private boolean isPlaying = false;
+    private long currentPosition = 0;
+    private long totalDuration = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. 화면 상시 켜짐 + 잠금 화면 위에 표시
+        // 1. 화면 켜짐 유지 & 잠금화면 위 표시
         getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
@@ -75,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        // 2. 몰입 모드 (풀스크린 - 상하단 바 완전 숨김)
+        // 2. 몰입 모드
         setupImmersiveMode();
 
         // 3. WebView 초기화
@@ -84,19 +86,18 @@ public class MainActivity extends AppCompatActivity {
         // 4. 권한 확인 및 요청
         checkAndRequestPermissions();
 
-        // 5. 알림 리스너 권한 확인 및 요청
+        // 5. 알림 리스너 권한 확인
         checkNotificationListenerPermission();
 
-        // 6. 미디어 정보 BroadcastReceiver 등록
+        // 6. 리시버 등록
         setupMediaReceiver();
-
-        // 7. 캘린더 주기적 업데이트 설정 (1분마다)
+        setupNotiReceiver();
+        
+        // 7. 업데이터 초기화
+        setupMediaProgressUpdater();
         setupCalendarUpdater();
     }
 
-    // ─────────────────────────────────────────────────
-    //  몰입 모드 설정
-    // ─────────────────────────────────────────────────
     private void setupImmersiveMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowInsetsController controller = getWindow().getInsetsController();
@@ -106,65 +107,36 @@ public class MainActivity extends AppCompatActivity {
             }
         } else {
             getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             );
         }
     }
 
-    // ─────────────────────────────────────────────────
-    //  WebView 설정
-    // ─────────────────────────────────────────────────
     private void setupWebView() {
         webView = findViewById(R.id.webView);
-
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(true);
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setMediaPlaybackRequiresUserGesture(false);
 
-        // JavascriptInterface 등록
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
-
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                // 페이지 로드 완료 후 데이터 전송
-                updateHandler.postDelayed(() -> {
-                    sendCalendarDataToWeb();
-                    sendMediaDataToWeb(currentTitle, currentArtist, isPlaying);
-                }, 500);
-            }
-        });
-
-        webView.setWebChromeClient(new WebChromeClient());
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    // ─────────────────────────────────────────────────
-    //  JavascriptInterface (Android → Web)
-    // ─────────────────────────────────────────────────
     public class AndroidBridge {
-
-        /**
-         * JS에서 호출: 캘린더 데이터 요청
-         */
         @JavascriptInterface
         public String getCalendarEvents() {
             return fetchCalendarEventsJson();
         }
 
-        /**
-         * JS에서 호출: 현재 미디어 정보 요청
-         */
         @JavascriptInterface
         public String getMediaInfo() {
             try {
@@ -172,15 +144,34 @@ public class MainActivity extends AppCompatActivity {
                 obj.put("title", currentTitle.isEmpty() ? "재생 중인 곡 없음" : currentTitle);
                 obj.put("artist", currentArtist.isEmpty() ? "" : currentArtist);
                 obj.put("isPlaying", isPlaying);
+                obj.put("position", currentPosition);
+                obj.put("duration", totalDuration);
                 return obj.toString();
             } catch (JSONException e) {
-                return "{\"title\":\"재생 중인 곡 없음\",\"artist\":\"\",\"isPlaying\":false}";
+                return "{}";
             }
         }
 
-        /**
-         * JS에서 호출: 알림 리스너 권한 설정 열기
-         */
+        @JavascriptInterface
+        public void mediaControl(String action) {
+            if (mediaController == null) return;
+            MediaController.TransportControls controls = mediaController.getTransportControls();
+            if (controls == null) return;
+            switch (action) {
+                case "play": controls.play(); break;
+                case "pause": controls.pause(); break;
+                case "next": controls.skipToNext(); break;
+                case "prev": controls.skipToPrevious(); break;
+            }
+        }
+
+        @JavascriptInterface
+        public void seekTo(long position) {
+            if (mediaController == null) return;
+            MediaController.TransportControls controls = mediaController.getTransportControls();
+            if (controls != null) controls.seekTo(position);
+        }
+
         @JavascriptInterface
         public void openNotificationSettings() {
             runOnUiThread(() -> {
@@ -190,22 +181,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ─────────────────────────────────────────────────
-    //  미디어 정보 BroadcastReceiver
-    // ─────────────────────────────────────────────────
     private void setupMediaReceiver() {
+        mediaCallback = new MediaController.Callback() {
+            @Override
+            public void onPlaybackStateChanged(PlaybackState state) {
+                if (state != null) {
+                    isPlaying = (state.getState() == PlaybackState.STATE_PLAYING);
+                    currentPosition = state.getPosition();
+                    sendMediaDataToWeb(currentTitle, currentArtist, isPlaying);
+                }
+            }
+            @Override
+            public void onMetadataChanged(MediaMetadata metadata) {
+                if (metadata != null) {
+                    currentTitle = metadata.getString(MediaMetadata.METADATA_KEY_TITLE);
+                    currentArtist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST);
+                    totalDuration = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION);
+                    sendMediaDataToWeb(currentTitle, currentArtist, isPlaying);
+                }
+            }
+        };
+
         mediaReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (MediaNotificationListenerService.ACTION_MEDIA_UPDATE.equals(action)) {
-                    currentTitle = intent.getStringExtra(MediaNotificationListenerService.EXTRA_TITLE);
-                    currentArtist = intent.getStringExtra(MediaNotificationListenerService.EXTRA_ARTIST);
+                if (MediaNotificationListenerService.ACTION_MEDIA_UPDATE.equals(intent.getAction())) {
+                    currentTitle = Objects.requireNonNullElse(intent.getStringExtra(MediaNotificationListenerService.EXTRA_TITLE), "");
+                    currentArtist = Objects.requireNonNullElse(intent.getStringExtra(MediaNotificationListenerService.EXTRA_ARTIST), "");
                     isPlaying = intent.getBooleanExtra(MediaNotificationListenerService.EXTRA_IS_PLAYING, false);
-
-                    if (currentTitle == null) currentTitle = "";
-                    if (currentArtist == null) currentArtist = "";
-
+                    android.media.session.MediaSession.Token token = intent.getParcelableExtra(MediaNotificationListenerService.EXTRA_MEDIA_SESSION_TOKEN);
+                    updateMediaController(token);
                     sendMediaDataToWeb(currentTitle, currentArtist, isPlaying);
                 }
             }
@@ -219,119 +224,129 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ─────────────────────────────────────────────────
-    //  캘린더 주기적 업데이트 (60초마다)
-    // ─────────────────────────────────────────────────
+    private void setupNotiReceiver() {
+        notiReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (MediaNotificationListenerService.ACTION_NOTI_POSTED.equals(action)) {
+                    sendNotiToWeb("post", intent.getStringExtra(MediaNotificationListenerService.EXTRA_NOTI_KEY),
+                            intent.getStringExtra(MediaNotificationListenerService.EXTRA_NOTI_APP_NAME),
+                            intent.getStringExtra(MediaNotificationListenerService.EXTRA_NOTI_TITLE),
+                            intent.getStringExtra(MediaNotificationListenerService.EXTRA_NOTI_TEXT),
+                            intent.getStringExtra(MediaNotificationListenerService.EXTRA_NOTI_ICON));
+                } else if (MediaNotificationListenerService.ACTION_NOTI_REMOVED.equals(action)) {
+                    sendNotiToWeb("remove", intent.getStringExtra(MediaNotificationListenerService.EXTRA_NOTI_KEY), null, null, null, null);
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(MediaNotificationListenerService.ACTION_NOTI_POSTED);
+        filter.addAction(MediaNotificationListenerService.ACTION_NOTI_REMOVED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(notiReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(notiReceiver, filter);
+        }
+    }
+
+    private void updateMediaController(android.media.session.MediaSession.Token token) {
+        if (token == null) return;
+        if (mediaController != null) mediaController.unregisterCallback(mediaCallback);
+        try {
+            mediaController = new MediaController(this, token);
+            mediaController.registerCallback(mediaCallback);
+            PlaybackState state = mediaController.getPlaybackState();
+            if (state != null) {
+                isPlaying = (state.getState() == PlaybackState.STATE_PLAYING);
+                currentPosition = state.getPosition();
+            }
+            MediaMetadata metadata = mediaController.getMetadata();
+            if (metadata != null) totalDuration = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION);
+        } catch (Exception e) { Log.e(TAG, "MediaController Error: " + e.getMessage()); }
+    }
+
+    private void setupMediaProgressUpdater() {
+        mediaProgressRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isUpdateRunning && isPlaying && mediaController != null) {
+                    PlaybackState state = mediaController.getPlaybackState();
+                    if (state != null) {
+                        currentPosition = state.getPosition();
+                        sendMediaDataToWeb(currentTitle, currentArtist, isPlaying);
+                    }
+                }
+                if (isUpdateRunning) updateHandler.postDelayed(this, 1000);
+            }
+        };
+    }
+
     private void setupCalendarUpdater() {
         calendarUpdateRunnable = new Runnable() {
             @Override
             public void run() {
-                sendCalendarDataToWeb();
-                updateHandler.postDelayed(this, 60 * 1000);
+                if (isUpdateRunning) {
+                    sendCalendarDataToWeb();
+                    updateHandler.postDelayed(this, 60000);
+                }
             }
         };
-        updateHandler.postDelayed(calendarUpdateRunnable, 2000);
     }
 
-    // ─────────────────────────────────────────────────
-    //  캘린더 데이터 조회 (CalendarContract API)
-    // ─────────────────────────────────────────────────
-    private String fetchCalendarEventsJson() {
-        JSONArray events = new JSONArray();
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
-                != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "캘린더 권한 없음");
-            return events.toString();
+    private void startPeriodicUpdates() {
+        if (!isUpdateRunning) {
+            isUpdateRunning = true;
+            updateHandler.post(calendarUpdateRunnable);
+            updateHandler.post(mediaProgressRunnable);
         }
+    }
 
+    private void stopPeriodicUpdates() {
+        isUpdateRunning = false;
+        updateHandler.removeCallbacks(calendarUpdateRunnable);
+        updateHandler.removeCallbacks(mediaProgressRunnable);
+    }
+
+    private String fetchCalendarEventsJson() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) return "[]";
+        JSONArray arr = new JSONArray();
         try {
             Calendar cal = Calendar.getInstance();
-
-            // 이번 달 시작 ~ 끝
             cal.set(Calendar.DAY_OF_MONTH, 1);
             cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-            long startMillis = cal.getTimeInMillis();
-
+            long start = cal.getTimeInMillis();
             cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
             cal.set(Calendar.HOUR_OF_DAY, 23);
-            cal.set(Calendar.MINUTE, 59);
-            cal.set(Calendar.SECOND, 59);
-            long endMillis = cal.getTimeInMillis();
+            long end = cal.getTimeInMillis();
 
-            Uri.Builder eventsUriBuilder = CalendarContract.Instances.CONTENT_URI.buildUpon();
-            ContentUris.appendId(eventsUriBuilder, startMillis);
-            ContentUris.appendId(eventsUriBuilder, endMillis);
+            Uri.Builder builder = CalendarContract.Instances.CONTENT_URI.buildUpon();
+            android.content.ContentUris.appendId(builder, start);
+            android.content.ContentUris.appendId(builder, end);
 
-            String[] projection = {
-                    CalendarContract.Instances.EVENT_ID,
-                    CalendarContract.Instances.TITLE,
-                    CalendarContract.Instances.BEGIN,
-                    CalendarContract.Instances.END,
-                    CalendarContract.Instances.ALL_DAY,
-                    CalendarContract.Instances.DESCRIPTION
-            };
-
-            String selection = CalendarContract.Instances.BEGIN + " >= ? AND " +
-                               CalendarContract.Instances.BEGIN + " <= ?";
-            String[] selectionArgs = { String.valueOf(startMillis), String.valueOf(endMillis) };
-
-            Cursor cursor = getContentResolver().query(
-                    eventsUriBuilder.build(),
-                    projection,
-                    null,
-                    null,
-                    CalendarContract.Instances.BEGIN + " ASC"
-            );
-
-            if (cursor != null) {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-
-                while (cursor.moveToNext()) {
-                    JSONObject event = new JSONObject();
-                    String title = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Instances.TITLE));
-                    long begin = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Instances.BEGIN));
-                    long end = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Instances.END));
-                    int allDay = cursor.getInt(cursor.getColumnIndexOrThrow(CalendarContract.Instances.ALL_DAY));
-
-                    Date beginDate = new Date(begin);
-                    event.put("id", cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Instances.EVENT_ID)));
-                    event.put("title", title != null ? title : "(제목 없음)");
-                    event.put("date", dateFormat.format(beginDate));
-                    event.put("startTime", allDay == 1 ? "종일" : timeFormat.format(beginDate));
-                    event.put("endTime", allDay == 1 ? "" : timeFormat.format(new Date(end)));
-                    event.put("allDay", allDay == 1);
-
-                    events.put(event);
-
-                    if (events.length() >= 50) break; // 최대 50개
+            String[] proj = { CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN, CalendarContract.Instances.END, CalendarContract.Instances.ALL_DAY };
+            try (android.database.Cursor cursor = getContentResolver().query(builder.build(), proj, null, null, CalendarContract.Instances.BEGIN + " ASC")) {
+                if (cursor != null) {
+                    while (cursor.moveToNext()) {
+                        JSONObject obj = new JSONObject();
+                        obj.put("title", Objects.requireNonNullElse(cursor.getString(0), "(제목 없음)"));
+                        long b = cursor.getLong(1);
+                        Calendar c = Calendar.getInstance(); c.setTimeInMillis(b);
+                        obj.put("date", String.format("%d-%02d-%02d", c.get(Calendar.YEAR), c.get(Calendar.MONTH)+1, c.get(Calendar.DAY_OF_MONTH)));
+                        obj.put("startTime", String.format("%02d:%02d", c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE)));
+                        obj.put("allDay", cursor.getInt(3) != 0);
+                        arr.put(obj);
+                    }
                 }
-                cursor.close();
             }
-        } catch (Exception e) {
-            Log.e(TAG, "캘린더 조회 오류: " + e.getMessage());
-        }
-
-        return events.toString();
+        } catch (Exception e) { Log.e(TAG, "Calendar Error: " + e.getMessage()); }
+        return arr.toString();
     }
 
-    // ─────────────────────────────────────────────────
-    //  Web으로 데이터 전송 (runOnUiThread 필수)
-    // ─────────────────────────────────────────────────
     private void sendCalendarDataToWeb() {
         if (webView == null) return;
-        String json = fetchCalendarEventsJson();
-        String escapedJson = json.replace("\\", "\\\\").replace("'", "\\'");
-        runOnUiThread(() ->
-            webView.evaluateJavascript(
-                "if(typeof receiveCalendarData === 'function') receiveCalendarData('" + escapedJson + "');",
-                null
-            )
-        );
+        String json = fetchCalendarEventsJson().replace("\\", "\\\\").replace("'", "\\'");
+        runOnUiThread(() -> webView.evaluateJavascript("if(typeof receiveCalendarData === 'function') receiveCalendarData('" + json + "');", null));
     }
 
     private void sendMediaDataToWeb(String title, String artist, boolean playing) {
@@ -341,74 +356,48 @@ public class MainActivity extends AppCompatActivity {
             obj.put("title", title.isEmpty() ? "재생 중인 곡 없음" : title);
             obj.put("artist", artist);
             obj.put("isPlaying", playing);
+            obj.put("position", currentPosition);
+            obj.put("duration", totalDuration);
             String json = obj.toString().replace("\\", "\\\\").replace("'", "\\'");
-            runOnUiThread(() ->
-                webView.evaluateJavascript(
-                    "if(typeof receiveMediaData === 'function') receiveMediaData('" + json + "');",
-                    null
-                )
-            );
-        } catch (JSONException e) {
-            Log.e(TAG, "미디어 JSON 오류: " + e.getMessage());
-        }
+            runOnUiThread(() -> webView.evaluateJavascript("if(typeof receiveMediaData === 'function') receiveMediaData('" + json + "');", null));
+        } catch (JSONException e) { Log.e(TAG, "Media JSON Error: " + e.getMessage()); }
     }
 
-    // ─────────────────────────────────────────────────
-    //  권한 요청
-    // ─────────────────────────────────────────────────
+    private void sendNotiToWeb(String type, String key, String appName, String title, String text, String icon) {
+        if (webView == null) return;
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("type", type); obj.put("key", key); obj.put("appName", appName); obj.put("title", title); obj.put("text", text); obj.put("icon", icon);
+            String json = obj.toString().replace("\\", "\\\\").replace("'", "\\'");
+            runOnUiThread(() -> webView.evaluateJavascript("if(typeof receiveNotification === 'function') receiveNotification('" + json + "');", null));
+        } catch (Exception e) { Log.e(TAG, "Noti JSON Error: " + e.getMessage()); }
+    }
+
     private void checkAndRequestPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_CALENDAR},
-                    REQUEST_CALENDAR_PERMISSION);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CALENDAR}, REQUEST_CALENDAR_PERMISSION);
         }
     }
 
     private void checkNotificationListenerPermission() {
-        String flat = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
-        boolean enabled = flat != null && flat.contains(getPackageName());
-        if (!enabled) {
-            Log.w(TAG, "알림 리스너 권한이 없습니다. 설정 화면으로 안내하세요.");
-            // 앱 첫 실행 시 Web에서 버튼으로 유도하거나, 아래 코드로 직접 열 수 있음
-            // Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-            // startActivity(intent);
+        String listeners = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
+        if (listeners == null || !listeners.contains(getPackageName())) {
+            Log.d(TAG, "Notification Listener Permission Required");
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CALENDAR_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                sendCalendarDataToWeb();
-            }
-        }
-    }
-
-    // ─────────────────────────────────────────────────
-    //  Lifecycle
-    // ─────────────────────────────────────────────────
+    protected void onResume() { super.onResume(); setupImmersiveMode(); startPeriodicUpdates(); }
     @Override
-    protected void onResume() {
-        super.onResume();
-        setupImmersiveMode(); // 화면 복귀 시 다시 몰입 모드
-        sendCalendarDataToWeb();
-    }
+    protected void onPause() { super.onPause(); stopPeriodicUpdates(); }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaReceiver != null) {
-            unregisterReceiver(mediaReceiver);
-        }
-        if (calendarUpdateRunnable != null) {
-            updateHandler.removeCallbacks(calendarUpdateRunnable);
-        }
-        if (webView != null) {
-            webView.destroy();
-        }
+        stopPeriodicUpdates();
+        if (mediaReceiver != null) unregisterReceiver(mediaReceiver);
+        if (notiReceiver != null) unregisterReceiver(notiReceiver);
+        if (mediaController != null) mediaController.unregisterCallback(mediaCallback);
+        if (webView != null) webView.destroy();
     }
 }

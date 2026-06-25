@@ -35,7 +35,6 @@
       --accent-purple:#BF5AF2;
       --divider:      rgba(255,255,255,0.06);
       --glow-blue:    rgba(10,132,255,0.25);
-      --glow-green:   rgba(48,209,88,0.20);
       --font:         'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --radius-lg:    20px;
       --radius-md:    14px;
@@ -119,7 +118,6 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      transition: opacity 0.3s;
     }
 
     .clock-ampm {
@@ -138,146 +136,52 @@
       margin-top: 4px;
     }
 
-    /* ══════════════════════════════════════════════════════
-       날씨 섹션
-    ══════════════════════════════════════════════════════ */
-    .weather-card {
+    /* ──────────────────────────────────────────────────
+       알림 센터 (Notification Center - Icons Only)
+    ────────────────────────────────────────────────── */
+    .noti-center {
       width: 100%;
-      max-width: 280px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+      margin-top: 20px;
       z-index: 1;
-      backdrop-filter: blur(10px);
-      transition: background var(--transition);
     }
 
-    .weather-card:hover {
-      background: var(--surface-hover);
-    }
-
-    .weather-header {
+    .noti-icons-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-    }
-
-    .weather-location {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    .weather-location svg {
-      width: 12px;
-      height: 12px;
-      fill: var(--accent-blue);
-    }
-
-    .weather-main {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
+      justify-content: center;
       gap: 12px;
+      flex-wrap: wrap;
+      min-height: 32px;
     }
 
-    .weather-temp-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .weather-temp {
-      font-size: clamp(36px, 5vw, 52px);
-      font-weight: 700;
-      letter-spacing: -2px;
-      line-height: 1;
-      color: var(--text-primary);
-    }
-
-    .weather-temp span {
-      font-size: 0.55em;
-      font-weight: 400;
-      color: var(--text-secondary);
-      vertical-align: super;
-    }
-
-    .weather-desc {
-      font-size: 13px;
-      color: var(--text-secondary);
-      font-weight: 400;
-    }
-
-    .weather-icon {
-      font-size: 42px;
-      line-height: 1;
-      filter: drop-shadow(0 0 12px rgba(255,200,0,0.3));
-      transition: transform var(--transition);
-    }
-
-    .weather-card:hover .weather-icon {
-      transform: scale(1.1) rotate(5deg);
-    }
-
-    .weather-details {
-      display: flex;
-      gap: 12px;
-    }
-
-    .weather-detail-item {
-      flex: 1;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .weather-detail-label {
-      font-size: 10px;
-      color: var(--text-dim);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .weather-detail-value {
-      font-size: 14px;
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    /* 날씨 로딩 상태 */
-    .weather-loading {
+    .noti-icon-item {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.08);
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-dim);
+      justify-content: center;
+      animation: iconIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent-blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    @keyframes iconIn {
+      from { opacity: 0; transform: scale(0.5) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .noti-icon-item img {
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+    }
+
+    .noti-icon-item.removing {
+      opacity: 0;
+      transform: scale(0.5);
     }
 
     /* ══════════════════════════════════════════════════════
@@ -590,14 +494,14 @@
        미디어 플레이어 페이지
     ══════════════════════════════════════════════════════ */
     .media-page {
-      padding: 20px 20px 20px 24px;
+      padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      justify-content: center;
+      min-height: 100%;
+      overflow-y: auto;
     }
 
-    /* 앨범 아트 + 곡 정보 카드 */
     .media-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -608,10 +512,8 @@
       align-items: center;
       position: relative;
       overflow: hidden;
-      transition: background var(--transition);
     }
 
-    /* 배경 블러 그라데이션 */
     .media-card::before {
       content: '';
       position: absolute;
@@ -654,6 +556,8 @@
       flex: 1;
       min-width: 0;
       z-index: 1;
+      overflow: hidden;
+      position: relative;
     }
 
     .media-status {
@@ -695,20 +599,16 @@
       font-weight: 700;
       color: var(--text-primary);
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       margin-bottom: 4px;
       letter-spacing: -0.3px;
-    }
-
-    .media-title.scrolling {
-      animation: marquee 8s linear infinite;
+      display: inline-block;
+      will-change: transform;
     }
 
     @keyframes marquee {
       0%   { transform: translateX(0); }
-      30%  { transform: translateX(0); }
-      70%  { transform: translateX(calc(-100% + 180px)); }
+      10%  { transform: translateX(0); }
+      90%  { transform: translateX(var(--move-x)); }
       100% { transform: translateX(0); }
     }
 
@@ -721,7 +621,6 @@
       text-overflow: ellipsis;
     }
 
-    /* 진행 바 */
     .media-progress {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -735,40 +634,38 @@
     .progress-bar-wrap {
       position: relative;
       width: 100%;
-      height: 3px;
+      height: 6px;
       background: rgba(255,255,255,0.1);
-      border-radius: 2px;
-      overflow: hidden;
+      border-radius: 3px;
+      cursor: pointer;
+      margin: 4px 0;
     }
 
     .progress-bar-fill {
       height: 100%;
-      border-radius: 2px;
+      border-radius: 3px;
       background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
-      transition: width 1s linear;
+      width: 0%;
       position: relative;
-    }
-
-    .progress-bar-fill.animating {
-      animation: progressAnim 30s linear infinite;
-    }
-
-    @keyframes progressAnim {
-      from { width: 0%; }
-      to   { width: 100%; }
+      pointer-events: none;
     }
 
     .progress-bar-fill::after {
       content: '';
       position: absolute;
-      right: 0;
+      right: -4px;
       top: 50%;
-      transform: translateY(-50%);
-      width: 8px;
-      height: 8px;
+      transform: translateY(-50%) scale(1);
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 0 6px rgba(255,255,255,0.6);
+      box-shadow: 0 0 8px rgba(255,255,255,0.6);
+      transition: transform 0.2s;
+    }
+
+    .progress-bar-wrap:active .progress-bar-fill::after {
+      transform: translateY(-50%) scale(1.4);
     }
 
     .progress-times {
@@ -779,7 +676,51 @@
       font-weight: 500;
     }
 
-    /* 비주얼라이저 (데코레이션) */
+    .media-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .control-btn {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, opacity 0.2s;
+      padding: 10px;
+    }
+
+    .control-btn:active {
+      transform: scale(0.9);
+      opacity: 0.7;
+    }
+
+    .control-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
+    .control-btn.play-pause {
+      background: var(--text-primary);
+      color: var(--bg);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+    }
+
+    .control-btn.play-pause svg {
+      width: 20px;
+      height: 20px;
+    }
+
     .visualizer {
       display: flex;
       align-items: flex-end;
@@ -816,15 +757,17 @@
       to   { height: 24px; }
     }
 
-    /* 권한 안내 카드 */
     .permission-card {
-      background: rgba(255,159,10,0.08);
-      border: 1px solid rgba(255,159,10,0.25);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
+      background: rgba(255,159,10,0.12);
+      border: 1px solid rgba(255,159,10,0.3);
+      border-radius: var(--radius-lg);
+      padding: 20px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
+      text-align: center;
+      gap: 16px;
+      margin-top: 10px;
     }
 
     .permission-icon {
@@ -847,153 +790,189 @@
     }
 
     .permission-btn {
-      margin-top: 8px;
-      padding: 6px 14px;
+      margin-top: 4px;
+      padding: 10px 20px;
+      width: 100%;
       background: var(--accent-orange);
       color: #000;
       border: none;
-      border-radius: var(--radius-sm);
-      font-size: 11px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.5px;
       cursor: pointer;
       font-family: var(--font);
-      transition: opacity var(--transition);
+      transition: all var(--transition);
     }
 
-    .permission-btn:hover {
-      opacity: 0.85;
+    .permission-btn:active {
+      transform: scale(0.96);
+      opacity: 0.9;
     }
 
-    /* ══════════════════════════════════════════════════════
-       유틸리티
-    ══════════════════════════════════════════════════════ */
     .hidden { display: none !important; }
 
-    .fade-transition {
-      transition: opacity var(--transition);
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      width: 90%;
+      max-width: 400px;
+      background: #1c1c1e;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-subtitle {
+      font-size: 13px;
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: var(--surface);
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .modal-event-list {
+      max-height: 250px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 4px;
+    }
+
+    .modal-event-item {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-left: 4px solid var(--accent-blue);
+    }
+
+    .modal-event-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .modal-event-time {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-no-events {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--text-dim);
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
 <div class="dashboard" id="dashboard">
-
-  <!-- ════════════════════════════════════
-       LEFT PANEL — 시계 + 날씨
-  ════════════════════════════════════ -->
   <div class="panel-left" id="panelLeft">
-
-    <!-- 시계 -->
     <div class="clock-section">
       <div class="clock-time" id="clockTime">00:00</div>
       <div class="clock-ampm" id="clockAmpm">AM</div>
       <div class="clock-date" id="clockDate">Loading...</div>
     </div>
-
-    <!-- 날씨 카드 -->
-    <div class="weather-card" id="weatherCard">
-      <div class="weather-header">
-        <div class="weather-location" id="weatherLocation">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
-          </svg>
-          현재 위치
-        </div>
-      </div>
-      <div id="weatherLoading" class="weather-loading">
-        <div class="spinner"></div>
-        날씨 정보 로딩 중...
-      </div>
-      <div id="weatherContent" class="hidden">
-        <div class="weather-main">
-          <div class="weather-temp-wrap">
-            <div class="weather-temp">
-              <span id="weatherTempVal">--</span><span>°</span>
-            </div>
-            <div class="weather-desc" id="weatherDesc">--</div>
-          </div>
-          <div class="weather-icon" id="weatherIcon">🌤</div>
-        </div>
-        <div class="weather-details">
-          <div class="weather-detail-item">
-            <div class="weather-detail-label">체감</div>
-            <div class="weather-detail-value" id="weatherFeels">--°</div>
-          </div>
-          <div class="weather-detail-item">
-            <div class="weather-detail-label">습도</div>
-            <div class="weather-detail-value" id="weatherHumidity">--%</div>
-          </div>
-          <div class="weather-detail-item">
-            <div class="weather-detail-label">바람</div>
-            <div class="weather-detail-value" id="weatherWind">--</div>
-          </div>
-        </div>
-      </div>
+    <div class="noti-center" id="notiCenter">
+      <div class="noti-icons-row" id="notiIconsRow"></div>
     </div>
+  </div>
 
-  </div><!-- /panel-left -->
-
-  <!-- ════════════════════════════════════
-       RIGHT PANEL — scroll-snap
-  ════════════════════════════════════ -->
   <div class="panel-right" id="panelRight">
-
-    <!-- 스크롤 인디케이터 -->
     <div class="scroll-indicator" id="scrollIndicator">
       <div class="scroll-dot active" data-page="0"></div>
       <div class="scroll-dot" data-page="1"></div>
     </div>
-
     <div class="scroll-container" id="scrollContainer">
-
-      <!-- ─────────────── PAGE 1: 달력 ─────────────── -->
       <div class="scroll-page" id="calendarPage">
         <div class="calendar-page">
-
           <div class="section-label">📅 이번 달 일정</div>
-
-          <!-- 미니 달력 -->
           <div class="mini-calendar">
             <div class="cal-header">
-              <div class="cal-month" id="calMonth">2026년 6월</div>
+              <div class="cal-month" id="calMonth"></div>
               <div class="cal-nav">
-                <div class="cal-nav-btn" id="calPrev" onclick="navigateMonth(-1)">
+                <div class="cal-nav-btn" onclick="navigateMonth(-1)">
                   <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
                 </div>
-                <div class="cal-nav-btn" id="calNext" onclick="navigateMonth(1)">
+                <div class="cal-nav-btn" onclick="navigateMonth(1)">
                   <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
                 </div>
               </div>
             </div>
-            <div class="cal-grid" id="calGrid">
-              <!-- JS로 채워짐 -->
-            </div>
+            <div class="cal-grid" id="calGrid"></div>
           </div>
-
-          <!-- 일정 리스트 -->
-          <div class="event-list-wrap" id="eventList">
-            <div class="no-events">
-              <div class="no-events-icon">📭</div>
-              <div class="no-events-text">일정을 불러오는 중...</div>
-            </div>
-          </div>
-
+          <div class="event-list-wrap" id="eventList"></div>
         </div>
-      </div><!-- /calendarPage -->
-
-      <!-- ─────────────── PAGE 2: 미디어 ─────────────── -->
+      </div>
       <div class="scroll-page" id="mediaPage">
         <div class="media-page">
-
           <div class="section-label">🎵 Now Playing</div>
-
-          <!-- 미디어 카드 -->
           <div class="media-card" id="mediaCard">
-            <div class="album-art" id="albumArt">
-              <span class="album-art-icon">🎵</span>
-            </div>
-            <div class="media-info">
+            <div class="album-art" id="albumArt"><span class="album-art-icon">🎵</span></div>
+            <div class="media-info" id="mediaInfo">
               <div class="media-status paused" id="mediaStatus">
                 <div class="live-dot paused" id="liveDot"></div>
                 <span id="mediaStatusText">대기 중</span>
@@ -1002,10 +981,16 @@
               <div class="media-artist" id="mediaArtist">음악을 재생해보세요</div>
             </div>
           </div>
-
-          <!-- 진행 바 -->
+          <div class="media-controls">
+            <button class="control-btn" onclick="mediaControl('prev')"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+            <button class="control-btn play-pause" id="playPauseBtn" onclick="togglePlay()">
+              <svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+              <svg viewBox="0 0 24 24" id="pauseIcon" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="control-btn" onclick="mediaControl('next')"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+          </div>
           <div class="media-progress" id="mediaProgressWrap">
-            <div class="progress-bar-wrap">
+            <div class="progress-bar-wrap" id="progressBarWrap" onmousedown="startDrag(event)" ontouchstart="startDrag(event)">
               <div class="progress-bar-fill" id="progressFill"></div>
             </div>
             <div class="progress-times">
@@ -1013,54 +998,29 @@
               <span id="progressTotal">--:--</span>
             </div>
           </div>
-
-          <!-- 오디오 비주얼라이저 (데코) -->
           <div style="display:flex; align-items:center; gap:14px; padding: 0 4px;">
             <div class="visualizer" id="visualizer">
-              <div class="vis-bar" style="height:4px"></div>
-              <div class="vis-bar" style="height:10px"></div>
-              <div class="vis-bar" style="height:7px"></div>
-              <div class="vis-bar" style="height:18px"></div>
-              <div class="vis-bar" style="height:14px"></div>
-              <div class="vis-bar" style="height:22px"></div>
-              <div class="vis-bar" style="height:9px"></div>
-              <div class="vis-bar" style="height:16px"></div>
-              <div class="vis-bar" style="height:20px"></div>
-              <div class="vis-bar" style="height:12px"></div>
-              <div class="vis-bar" style="height:6px"></div>
-              <div class="vis-bar" style="height:10px"></div>
+              <div class="vis-bar" style="height:4px"></div><div class="vis-bar" style="height:10px"></div><div class="vis-bar" style="height:7px"></div>
+              <div class="vis-bar" style="height:18px"></div><div class="vis-bar" style="height:14px"></div><div class="vis-bar" style="height:22px"></div>
+              <div class="vis-bar" style="height:9px"></div><div class="vis-bar" style="height:16px"></div><div class="vis-bar" style="height:20px"></div>
+              <div class="vis-bar" style="height:12px"></div><div class="vis-bar" style="height:6px"></div><div class="vis-bar" style="height:10px"></div>
             </div>
-            <div style="flex:1; font-size:11px; color:var(--text-dim);">
-              Android 알림 리스너가 미디어 정보를 실시간으로 감지합니다
-            </div>
+            <div style="flex:1; font-size:11px; color:var(--text-dim);">미디어를 실시간으로 감지합니다</div>
           </div>
-
-          <!-- 알림 리스너 권한 카드 -->
           <div class="permission-card" id="permissionCard">
             <div class="permission-icon">🔔</div>
             <div class="permission-text">
-              <p><strong>알림 접근 권한 필요</strong><br>
-              음악 정보를 표시하려면 알림 리스너 권한이 필요합니다.</p>
+              <p><strong>알림 접근 권한 필요</strong><br>음악 정보를 표시하려면 권한이 필요합니다.</p>
               <button class="permission-btn" onclick="openNotificationSettings()">권한 설정하기</button>
             </div>
           </div>
-
         </div>
-      </div><!-- /mediaPage -->
-
-    </div><!-- /scroll-container -->
-  </div><!-- /panel-right -->
-
-</div><!-- /dashboard -->
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   GALAXY STANDBY DASHBOARD — Main JavaScript
-═══════════════════════════════════════════════════════════ */
-
-// ─────────────────────────────────────────────────────────
-//  1. 실시간 시계
-// ─────────────────────────────────────────────────────────
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTHS_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
@@ -1070,130 +1030,83 @@ function updateClock() {
   const m = now.getMinutes();
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
-
-  document.getElementById('clockTime').textContent =
-    String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  document.getElementById('clockTime').textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
   document.getElementById('clockAmpm').textContent = ampm;
-
-  const dateStr =
-    now.getFullYear() + '년 ' +
-    MONTHS_KO[now.getMonth()] + ' ' +
-    now.getDate() + '일 ' +
-    WEEKDAYS[now.getDay()] + '요일';
-  document.getElementById('clockDate').textContent = dateStr;
+  document.getElementById('clockDate').textContent = `${now.getFullYear()}년 ${MONTHS_KO[now.getMonth()]} ${now.getDate()}일 ${WEEKDAYS[now.getDay()]}요일`;
 }
-
 updateClock();
 setInterval(updateClock, 1000);
 
-// ─────────────────────────────────────────────────────────
-//  2. 날씨 (Open-Meteo 무료 API + Geolocation)
-// ─────────────────────────────────────────────────────────
-const WEATHER_ICONS = {
-  0: ['☀️','맑음'], 1: ['🌤','대체로 맑음'], 2: ['⛅','부분적으로 흐림'],
-  3: ['☁️','흐림'], 45: ['🌫','안개'], 48: ['🌫','결빙 안개'],
-  51: ['🌦','이슬비'], 53: ['🌦','이슬비'], 55: ['🌧','이슬비'],
-  61: ['🌧','비'], 63: ['🌧','비'], 65: ['🌧','폭우'],
-  71: ['❄️','눈'], 73: ['❄️','눈'], 75: ['❄️','폭설'],
-  80: ['🌦','소나기'], 81: ['🌧','소나기'], 82: ['⛈','강한 소나기'],
-  95: ['⛈','뇌우'], 96: ['⛈','우박 동반 뇌우'], 99: ['⛈','뇌우']
-};
-
-function fetchWeather(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto&wind_speed_unit=ms`;
-
-  fetch(url)
-    .then(r => r.json())
-    .then(data => {
-      const c = data.current;
-      const [icon, desc] = WEATHER_ICONS[c.weather_code] || ['🌡','알 수 없음'];
-
-      document.getElementById('weatherLoading').classList.add('hidden');
-      document.getElementById('weatherContent').classList.remove('hidden');
-      document.getElementById('weatherTempVal').textContent = Math.round(c.temperature_2m);
-      document.getElementById('weatherDesc').textContent = desc;
-      document.getElementById('weatherIcon').textContent = icon;
-      document.getElementById('weatherFeels').textContent = Math.round(c.apparent_temperature) + '°';
-      document.getElementById('weatherHumidity').textContent = Math.round(c.relative_humidity_2m) + '%';
-      document.getElementById('weatherWind').textContent = Math.round(c.wind_speed_10m) + 'm/s';
-    })
-    .catch(() => {
-      document.getElementById('weatherLoading').innerHTML = '⚠️ 날씨 오류';
-    });
+let notifications = new Map();
+function receiveNotification(jsonStr) {
+  try {
+    const data = JSON.parse(jsonStr);
+    if (data.type === 'post') notifications.set(data.key, data);
+    else if (data.type === 'remove') notifications.delete(data.key);
+    renderNotifications();
+  } catch (e) {}
 }
 
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-    ()  => fetchWeather(37.5665, 126.9780) // 기본: 서울
-  );
-} else {
-  fetchWeather(37.5665, 126.9780);
+function renderNotifications() {
+  const container = document.getElementById('notiIconsRow');
+  if (!container) return;
+  if (notifications.size === 0) { container.innerHTML = ''; return; }
+  const uniqueAppNotis = new Map();
+  Array.from(notifications.values()).forEach(noti => uniqueAppNotis.set(noti.appName, noti));
+  const items = Array.from(uniqueAppNotis.values()).reverse();
+  const currentAppNames = new Set(items.map(i => i.appName));
+  Array.from(container.children).forEach(child => {
+    if (child.dataset.appName && !currentAppNames.has(child.dataset.appName)) {
+      child.classList.add('removing');
+      setTimeout(() => child.remove(), 300);
+    }
+  });
+  items.forEach((noti, index) => {
+    let iconItem = container.querySelector(`[data-app-name="${noti.appName}"]`);
+    if (!iconItem) {
+      iconItem = document.createElement('div');
+      iconItem.className = 'noti-icon-item';
+      iconItem.dataset.appName = noti.appName;
+      if (noti.icon) {
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${noti.icon}`;
+        iconItem.appendChild(img);
+      } else iconItem.innerHTML = '🔔';
+      container.appendChild(iconItem);
+    }
+    if (container.children[index] !== iconItem) container.insertBefore(iconItem, container.children[index]);
+  });
 }
 
-// 날씨 30분마다 갱신
-setInterval(() => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-      ()  => fetchWeather(37.5665, 126.9780)
-    );
-  }
-}, 30 * 60 * 1000);
-
-// ─────────────────────────────────────────────────────────
-//  3. 미니 달력 (캘린더 렌더링)
-// ─────────────────────────────────────────────────────────
-let calendarYear  = new Date().getFullYear();
-let calendarMonth = new Date().getMonth(); // 0-indexed
-let eventDays     = new Set(); // 일정 있는 날짜들 (이번 달)
-let allEvents     = [];
-
+let calendarYear = new Date().getFullYear(), calendarMonth = new Date().getMonth(), eventDays = new Set(), allEvents = [];
 function renderCalendar(year, month) {
   document.getElementById('calMonth').textContent = `${year}년 ${MONTHS_KO[month]}`;
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
-
-  // 요일 헤더
   ['일','월','화','수','목','금','토'].forEach(d => {
     const cell = document.createElement('div');
     cell.className = 'cal-day-name';
     cell.textContent = d;
     grid.appendChild(cell);
   });
-
-  const today = new Date();
-  const firstDay = new Date(year, month, 1).getDay(); // 0=일
-  const lastDate = new Date(year, month + 1, 0).getDate();
-
-  // 앞 빈칸
+  const today = new Date(), firstDay = new Date(year, month, 1).getDay(), lastDate = new Date(year, month + 1, 0).getDate();
   for (let i = 0; i < firstDay; i++) {
     const cell = document.createElement('div');
     cell.className = 'cal-cell other-month';
-    const prevLastDate = new Date(year, month, 0).getDate();
-    cell.textContent = prevLastDate - firstDay + i + 1;
+    cell.textContent = new Date(year, month, 0).getDate() - firstDay + i + 1;
     grid.appendChild(cell);
   }
-
-  // 날짜
   for (let d = 1; d <= lastDate; d++) {
     const cell = document.createElement('div');
     cell.className = 'cal-cell';
-
-    const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
-    if (isToday) cell.classList.add('today');
-
-    // 일정 도트
+    if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) cell.classList.add('today');
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     if (eventDays.has(dateStr)) cell.classList.add('has-event');
-
     cell.textContent = d;
+    cell.ondblclick = () => showEventModal(year, month, d);
     grid.appendChild(cell);
   }
-
-  // 뒤 빈칸
-  const totalCells = firstDay + lastDate;
-  const remaining = (7 - (totalCells % 7)) % 7;
+  const remaining = (7 - ((firstDay + lastDate) % 7)) % 7;
   for (let i = 1; i <= remaining; i++) {
     const cell = document.createElement('div');
     cell.className = 'cal-cell other-month';
@@ -1204,243 +1117,166 @@ function renderCalendar(year, month) {
 
 function navigateMonth(dir) {
   calendarMonth += dir;
-  if (calendarMonth < 0)  { calendarMonth = 11; calendarYear--; }
-  if (calendarMonth > 11) { calendarMonth = 0;  calendarYear++; }
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  else if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
   renderCalendar(calendarYear, calendarMonth);
   renderEventList();
 }
 
-renderCalendar(calendarYear, calendarMonth);
-
-// ─────────────────────────────────────────────────────────
-//  4. 일정 리스트 렌더링
-// ─────────────────────────────────────────────────────────
 function renderEventList() {
-  const today = new Date();
-  const todayStr = formatDate(today);
-  const curMonthStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}`;
-
+  const todayStr = formatDate(new Date()), curMonthStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}`;
   const filtered = allEvents.filter(e => e.date && e.date.startsWith(curMonthStr));
   filtered.sort((a, b) => a.date.localeCompare(b.date));
-
   const list = document.getElementById('eventList');
-
   if (filtered.length === 0) {
-    list.innerHTML = `
-      <div class="no-events">
-        <div class="no-events-icon">📭</div>
-        <div class="no-events-text">이번 달 등록된 일정이 없습니다</div>
-      </div>`;
+    list.innerHTML = '<div class="no-events"><div class="no-events-icon">📭</div><div class="no-events-text">이번 달 일정이 없습니다</div></div>';
     return;
   }
-
   list.innerHTML = '';
   const COLORS = ['#0A84FF','#30D158','#FF375F','#FF9F0A','#BF5AF2','#64D2FF'];
-
   filtered.forEach((ev, idx) => {
-    const isToday = ev.date === todayStr;
-    const item = document.createElement('div');
+    const isToday = ev.date === todayStr, item = document.createElement('div');
     item.className = 'event-item' + (isToday ? ' today-event' : '');
-    item.style.animationDelay = (idx * 0.05) + 's';
-
-    const color = COLORS[idx % COLORS.length];
-    const dateParts = ev.date ? ev.date.split('-') : ['--','--','--'];
-    const dateLabel = dateParts[1] + '/' + dateParts[2];
-
-    item.innerHTML = `
-      <div class="event-color-bar" style="background:${color}"></div>
-      <div class="event-content">
-        <div class="event-title">${escapeHtml(ev.title)}</div>
-        <div class="event-time">${ev.allDay ? '종일' : (ev.startTime || '') + (ev.endTime ? ' ~ ' + ev.endTime : '')}</div>
-      </div>
-      <div class="event-date-badge">${isToday ? '오늘' : dateLabel}</div>`;
-
+    const dateParts = ev.date.split('-');
+    item.innerHTML = `<div class="event-color-bar" style="background:${COLORS[idx % COLORS.length]}"></div><div class="event-content"><div class="event-title">${escapeHtml(ev.title)}</div><div class="event-time">${ev.allDay ? '종일' : (ev.startTime || '') + (ev.endTime ? ' ~ ' + ev.endTime : '')}</div></div><div class="event-date-badge">${isToday ? '오늘' : dateParts[1] + '/' + dateParts[2]}</div>`;
     list.appendChild(item);
   });
 }
 
-function formatDate(d) {
-  return d.getFullYear() + '-' +
-    String(d.getMonth()+1).padStart(2,'0') + '-' +
-    String(d.getDate()).padStart(2,'0');
-}
+function formatDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-// ─────────────────────────────────────────────────────────
-//  5. Android → Web 콜백 함수 (JavascriptInterface 연동)
-// ─────────────────────────────────────────────────────────
-
-/**
- * 캘린더 데이터 수신 (Java → JavaScript)
- * @param {string} jsonStr - JSON 배열 문자열
- */
 function receiveCalendarData(jsonStr) {
   try {
     const events = JSON.parse(jsonStr);
     allEvents = events;
-
-    // 일정 날짜 Set 구축 (달력 도트용)
     eventDays = new Set(events.map(e => e.date).filter(Boolean));
-
     renderCalendar(calendarYear, calendarMonth);
     renderEventList();
-  } catch (e) {
-    console.error('캘린더 JSON 파싱 오류:', e);
-  }
+  } catch (e) {}
 }
 
-/**
- * 미디어 정보 수신 (Java → JavaScript)
- * @param {string} jsonStr - {title, artist, isPlaying} JSON 문자열
- */
 function receiveMediaData(jsonStr) {
   try {
     const media = JSON.parse(jsonStr);
-    updateMediaUI(media.title, media.artist, media.isPlaying);
-  } catch (e) {
-    console.error('미디어 JSON 파싱 오류:', e);
-  }
+    updateMediaUI(media.title, media.artist, media.isPlaying, media.position, media.duration);
+  } catch (e) {}
 }
 
-function updateMediaUI(title, artist, isPlaying) {
-  const titleEl  = document.getElementById('mediaTitle');
-  const artistEl = document.getElementById('mediaArtist');
-  const statusEl = document.getElementById('mediaStatus');
-  const statusTxtEl = document.getElementById('mediaStatusText');
-  const dotEl    = document.getElementById('liveDot');
-  const albumEl  = document.getElementById('albumArt');
-  const fillEl   = document.getElementById('progressFill');
-  const visBars  = document.querySelectorAll('.vis-bar');
-  const permCard = document.getElementById('permissionCard');
-
+let lastTitle = "", lastPosition = 0, lastUpdateTime = 0, positionTimer = null, isDragging = false, lastDuration = 0;
+function updateMediaUI(title, artist, isPlaying, position, duration) {
+  const titleEl = document.getElementById('mediaTitle'), artistEl = document.getElementById('mediaArtist'), statusEl = document.getElementById('mediaStatus'), statusTxtEl = document.getElementById('mediaStatusText'), dotEl = document.getElementById('liveDot'), albumEl = document.getElementById('albumArt'), visBars = document.querySelectorAll('.vis-bar'), permCard = document.getElementById('permissionCard'), playIcon = document.getElementById('playIcon'), pauseIcon = document.getElementById('pauseIcon');
   const hasTrack = title && title !== '재생 중인 곡 없음';
-
-  titleEl.textContent  = title  || '재생 중인 곡 없음';
+  lastDuration = duration;
+  titleEl.textContent = title || '재생 중인 곡 없음';
   artistEl.textContent = artist || (hasTrack ? '' : '음악을 재생해보세요');
-
-  // 제목이 길면 마퀴 애니메이션
-  titleEl.classList.toggle('scrolling', hasTrack && title.length > 18);
-
+  if (title !== lastTitle) {
+    lastTitle = title;
+    titleEl.style.animation = 'none';
+    titleEl.offsetHeight;
+    if (hasTrack) {
+      const containerWidth = document.getElementById('mediaInfo').clientWidth, textWidth = titleEl.scrollWidth;
+      if (textWidth > containerWidth) {
+        titleEl.style.setProperty('--move-x', `${containerWidth - textWidth - 20}px`);
+        titleEl.style.animation = 'marquee 8s linear infinite';
+      }
+    }
+  }
   if (isPlaying && hasTrack) {
-    statusEl.classList.remove('paused');
-    statusTxtEl.textContent = 'Now Playing';
-    dotEl.classList.remove('paused');
-    albumEl.classList.add('playing');
-    fillEl.classList.add('animating');
-    visBars.forEach(b => b.classList.add('active'));
-    permCard.classList.add('hidden');
+    statusEl.classList.remove('paused'); statusTxtEl.textContent = 'Now Playing'; dotEl.classList.remove('paused'); albumEl.classList.add('playing'); visBars.forEach(b => b.classList.add('active')); permCard.classList.add('hidden'); playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden');
   } else {
-    statusEl.classList.add('paused');
-    statusTxtEl.textContent = isPlaying ? '잠시 정지' : '대기 중';
-    dotEl.classList.add('paused');
-    albumEl.classList.remove('playing');
-    fillEl.classList.remove('animating');
-    visBars.forEach(b => b.classList.remove('active'));
-    if (!hasTrack) permCard.classList.remove('hidden');
-    else permCard.classList.add('hidden');
+    statusEl.classList.add('paused'); statusTxtEl.textContent = isPlaying ? '잠시 정지' : '대기 중'; dotEl.classList.add('paused'); albumEl.classList.remove('playing'); visBars.forEach(b => b.classList.remove('active')); playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden');
+    if (!hasTrack) permCard.classList.remove('hidden'); else permCard.classList.add('hidden');
+  }
+  if (!isDragging) {
+    lastPosition = position; lastUpdateTime = Date.now();
+    updateProgressUI(position, duration);
+    if (positionTimer) clearInterval(positionTimer);
+    if (isPlaying && hasTrack && duration > 0) {
+      positionTimer = setInterval(() => {
+        if (!isDragging) updateProgressUI(lastPosition + (Date.now() - lastUpdateTime), duration);
+      }, 200);
+    }
   }
 }
 
-// ─────────────────────────────────────────────────────────
-//  6. 알림 설정 열기 (Android Bridge 호출)
-// ─────────────────────────────────────────────────────────
-function openNotificationSettings() {
-  if (window.AndroidBridge && typeof window.AndroidBridge.openNotificationSettings === 'function') {
-    window.AndroidBridge.openNotificationSettings();
-  }
+function updateProgressUI(current, total) {
+  const fillEl = document.getElementById('progressFill'), curEl = document.getElementById('progressCurrent'), totEl = document.getElementById('progressTotal');
+  if (total <= 0) { fillEl.style.width = '0%'; curEl.textContent = '--:--'; totEl.textContent = '--:--'; return; }
+  fillEl.style.width = Math.min(100, (current / total) * 100) + '%';
+  curEl.textContent = formatTime(current); totEl.textContent = formatTime(total);
+}
+function formatTime(ms) { if (!ms || ms < 0) return '0:00'; const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`; }
+function togglePlay() { mediaControl(!document.getElementById('playIcon').classList.contains('hidden') ? 'play' : 'pause'); }
+function mediaControl(action) { if (window.AndroidBridge && window.AndroidBridge.mediaControl) window.AndroidBridge.mediaControl(action); }
+
+function startDrag(e) {
+  if (lastDuration <= 0) return;
+  isDragging = true; updateDrag(e);
+  document.addEventListener('mousemove', updateDrag); document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('touchmove', updateDrag, { passive: false }); document.addEventListener('touchend', stopDrag);
+}
+function updateDrag(e) {
+  if (!isDragging) return;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX, wrap = document.getElementById('progressBarWrap'), rect = wrap.getBoundingClientRect();
+  let percent = (clientX - rect.left) / rect.width;
+  percent = Math.max(0, Math.min(1, percent));
+  lastPosition = Math.floor(lastDuration * percent);
+  updateProgressUI(lastPosition, lastDuration);
+  if (e.cancelable) e.preventDefault();
+}
+function stopDrag() {
+  if (!isDragging) return;
+  isDragging = false;
+  document.removeEventListener('mousemove', updateDrag); document.removeEventListener('mouseup', stopDrag);
+  document.removeEventListener('touchmove', updateDrag); document.removeEventListener('touchend', stopDrag);
+  if (window.AndroidBridge && window.AndroidBridge.seekTo) window.AndroidBridge.seekTo(lastPosition);
+  lastUpdateTime = Date.now();
 }
 
-// ─────────────────────────────────────────────────────────
-//  7. 스크롤 인디케이터 업데이트
-// ─────────────────────────────────────────────────────────
-const scrollContainer = document.getElementById('scrollContainer');
-const scrollDots = document.querySelectorAll('.scroll-dot');
-
+function openNotificationSettings() { if (window.AndroidBridge && window.AndroidBridge.openNotificationSettings) window.AndroidBridge.openNotificationSettings(); }
+const scrollContainer = document.getElementById('scrollContainer'), scrollDots = document.querySelectorAll('.scroll-dot');
 scrollContainer.addEventListener('scroll', () => {
-  const scrollY = scrollContainer.scrollTop;
-  const pageH   = scrollContainer.clientHeight;
-  const pageIdx = Math.round(scrollY / pageH);
-
-  scrollDots.forEach((dot, i) => {
-    dot.classList.toggle('active', i === pageIdx);
-  });
+  const pageIdx = Math.round(scrollContainer.scrollTop / scrollContainer.clientHeight);
+  scrollDots.forEach((dot, i) => dot.classList.toggle('active', i === pageIdx));
 }, { passive: true });
 
-// ─────────────────────────────────────────────────────────
-//  8. Android Bridge 초기 데이터 폴링 (연결 전 대비)
-// ─────────────────────────────────────────────────────────
 function tryFetchFromAndroid() {
   if (window.AndroidBridge) {
-    try {
-      const calJson = window.AndroidBridge.getCalendarEvents();
-      if (calJson) receiveCalendarData(calJson);
-    } catch(e) {}
-
-    try {
-      const mediaJson = window.AndroidBridge.getMediaInfo();
-      if (mediaJson) receiveMediaData(mediaJson);
-    } catch(e) {}
+    try { const c = window.AndroidBridge.getCalendarEvents(); if (c) receiveCalendarData(c); } catch(e) {}
+    try { const m = window.AndroidBridge.getMediaInfo(); if (m) receiveMediaData(m); } catch(e) {}
   }
 }
-
-// 페이지 로드 직후 + 5초 후 한 번 더 시도
 setTimeout(tryFetchFromAndroid, 800);
-setTimeout(tryFetchFromAndroid, 5000);
 
-// ─────────────────────────────────────────────────────────
-//  9. 브라우저 테스트용 더미 데이터 주입 (Android 없을 때)
-// ─────────────────────────────────────────────────────────
-setTimeout(() => {
-  if (!window.AndroidBridge) {
-    const today = new Date();
-    const fmt = d => d.getFullYear() + '-' +
-                     String(d.getMonth()+1).padStart(2,'0') + '-' +
-                     String(d.getDate()).padStart(2,'0');
-
-    const d1 = new Date(today); d1.setDate(today.getDate());
-    const d2 = new Date(today); d2.setDate(today.getDate() + 2);
-    const d3 = new Date(today); d3.setDate(today.getDate() + 5);
-    const d4 = new Date(today); d4.setDate(today.getDate() + 9);
-    const d5 = new Date(today); d5.setDate(today.getDate() + 14);
-
-    const demoEvents = [
-      { id:1, title:'팀 미팅',           date:fmt(d1), startTime:'10:00', endTime:'11:00', allDay:false },
-      { id:2, title:'점심 약속',          date:fmt(d1), startTime:'12:30', endTime:'13:30', allDay:false },
-      { id:3, title:'프로젝트 데드라인',  date:fmt(d2), startTime:'18:00', endTime:'',      allDay:false },
-      { id:4, title:'독서 모임',          date:fmt(d3), startTime:'19:00', endTime:'21:00', allDay:false },
-      { id:5, title:'생일 파티 🎂',       date:fmt(d4), startTime:'',      endTime:'',      allDay:true  },
-      { id:6, title:'여행 출발 ✈️',       date:fmt(d5), startTime:'08:00', endTime:'',      allDay:false },
-    ];
-
-    receiveCalendarData(JSON.stringify(demoEvents));
-    receiveMediaData(JSON.stringify({
-      title: 'Blinding Lights',
-      artist: 'The Weeknd',
-      isPlaying: true
-    }));
-
-    // 날씨 더미 (인터넷 없을 때 대비)
-    setTimeout(() => {
-      if (document.getElementById('weatherContent').classList.contains('hidden')) {
-        document.getElementById('weatherLoading').classList.add('hidden');
-        document.getElementById('weatherContent').classList.remove('hidden');
-        document.getElementById('weatherTempVal').textContent = '24';
-        document.getElementById('weatherDesc').textContent = '대체로 맑음';
-        document.getElementById('weatherIcon').textContent = '🌤';
-        document.getElementById('weatherFeels').textContent = '26°';
-        document.getElementById('weatherHumidity').textContent = '58%';
-        document.getElementById('weatherWind').textContent = '3m/s';
-      }
-    }, 5000);
+function showEventModal(year, month, day) {
+  const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  document.getElementById('modalDateLabel').textContent = `${year}년 ${month+1}월 ${day}일`;
+  const list = document.getElementById('modalEventList');
+  list.innerHTML = '';
+  const dayEvents = allEvents.filter(e => e.date === dateStr);
+  if (dayEvents.length === 0) list.innerHTML = '<div class="modal-no-events">일정이 없습니다.</div>';
+  else {
+    dayEvents.forEach(ev => {
+      const item = document.createElement('div');
+      item.className = 'modal-event-item';
+      item.innerHTML = `<div class="modal-event-title">${escapeHtml(ev.title)}</div><div class="modal-event-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${ev.allDay ? '종일' : (ev.startTime || '') + (ev.endTime ? ' ~ ' + ev.endTime : '')}</div>`;
+      list.appendChild(item);
+    });
   }
-}, 1500);
-
+  document.getElementById('eventModal').classList.add('active');
+}
+function closeEventModal() { document.getElementById('eventModal').classList.remove('active'); }
 console.log('🚀 Galaxy StandBy Dashboard initialized');
 </script>
+<div class="modal-overlay" id="eventModal" onclick="if(event.target === this) closeEventModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title-wrap"><div class="modal-subtitle" id="modalDateLabel"></div><div class="modal-title">상세 일정</div></div>
+      <button class="close-btn" onclick="closeEventModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div class="modal-event-list" id="modalEventList"></div>
+  </div>
+</div>
 </body>
 </html>

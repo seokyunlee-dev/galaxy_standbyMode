@@ -5,43 +5,79 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
-import androidx.media.app.NotificationCompat;
-
 import android.app.Notification;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Base64;
+
+import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * NotificationListenerService를 활용하여 현재 재생 중인 음악의
  * 곡 제목과 아티스트명을 추출해 MainActivity에 브로드캐스트합니다.
- *
- * ※ 이 서비스가 동작하려면 사용자가
- *    설정 → 알림 → 알림 접근 허용에서 앱을 활성화해야 합니다.
+ * 또한 일반 알림을 캡처하여 알림 센터 기능을 지원합니다.
  */
 public class MediaNotificationListenerService extends NotificationListenerService {
 
     private static final String TAG = "MediaListener";
 
-    // BroadcastReceiver 액션 및 Extra 키
+    // BroadcastReceiver 액션 및 Extra 키 (미디어)
     public static final String ACTION_MEDIA_UPDATE = "com.galaxy.standbymode.MEDIA_UPDATE";
     public static final String EXTRA_TITLE = "extra_title";
     public static final String EXTRA_ARTIST = "extra_artist";
     public static final String EXTRA_IS_PLAYING = "extra_is_playing";
+    public static final String EXTRA_MEDIA_SESSION_TOKEN = "extra_media_session_token";
+
+    // BroadcastReceiver 액션 및 Extra 키 (일반 알림)
+    public static final String ACTION_NOTI_POSTED = "com.galaxy.standbymode.NOTI_POSTED";
+    public static final String ACTION_NOTI_REMOVED = "com.galaxy.standbymode.NOTI_REMOVED";
+    public static final String EXTRA_NOTI_KEY = "extra_noti_key";
+    public static final String EXTRA_NOTI_APP_NAME = "extra_noti_app_name";
+    public static final String EXTRA_NOTI_TITLE = "extra_noti_title";
+    public static final String EXTRA_NOTI_TEXT = "extra_noti_text";
+    public static final String EXTRA_NOTI_ICON = "extra_noti_icon";
 
     // 미디어 스타일 알림에서 쓰이는 메타데이터 키 (표준)
     private static final String EXTRA_MEDIA_SESSION =
             "android.mediaSession";
 
+    // 필터링할 패키지 및 키워드 설정
+    private static final Set<String> IGNORED_PACKAGES = new HashSet<>(Arrays.asList(
+        "android",
+        "com.android.systemui",
+        "com.android.settings",
+        "com.samsung.android.app.routines",
+        "com.samsung.android.oneconnect"
+    ));
+    
+    private static final String[] IGNORED_KEYWORDS = {
+        "충전", "USB", "절전", "업데이트", "Screenshot", "스크린샷", "모드 및 루틴"
+    };
+
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        processNotification(sbn);
+        processMediaNotification(sbn);
+        processGeneralNotification(sbn);
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
-        // 미디어 알림이 제거되면 재생 중지 상태로 브로드캐스트
+        // 미디어 알림 처리
         if (isMediaNotification(sbn)) {
-            broadcastMediaInfo("", "", false);
+            broadcastMediaInfo("", "", false, null);
         }
+        
+        // 일반 알림 제거 브로드캐스트
+        Intent intent = new Intent(ACTION_NOTI_REMOVED);
+        intent.putExtra(EXTRA_NOTI_KEY, sbn.getKey());
+        intent.setPackage(getPackageName());
+        sendBroadcast(intent);
     }
 
     @Override
@@ -53,10 +89,8 @@ public class MediaNotificationListenerService extends NotificationListenerServic
             StatusBarNotification[] active = getActiveNotifications();
             if (active != null) {
                 for (StatusBarNotification sbn : active) {
-                    if (isMediaNotification(sbn)) {
-                        processNotification(sbn);
-                        break;
-                    }
+                    processMediaNotification(sbn);
+                    processGeneralNotification(sbn);
                 }
             }
         } catch (Exception e) {
@@ -65,52 +99,133 @@ public class MediaNotificationListenerService extends NotificationListenerServic
     }
 
     // ─────────────────────────────────────────────────
-    //  알림 처리
+    //  알림 처리 (미디어)
     // ─────────────────────────────────────────────────
-    private void processNotification(StatusBarNotification sbn) {
+    private void processMediaNotification(StatusBarNotification sbn) {
         if (!isMediaNotification(sbn)) return;
 
         Notification notification = sbn.getNotification();
         Bundle extras = notification.extras;
         if (extras == null) return;
 
-        // MediaStyle 알림에서 제목(TITLE)과 아티스트(TEXT/SUB_TEXT) 추출
         CharSequence title = extras.getCharSequence(Notification.EXTRA_TITLE);
         CharSequence artist = extras.getCharSequence(Notification.EXTRA_TEXT);
 
-        // 일부 앱은 EXTRA_SUB_TEXT에 아티스트를 넣기도 함
         if (artist == null || artist.toString().trim().isEmpty()) {
             artist = extras.getCharSequence(Notification.EXTRA_SUB_TEXT);
         }
 
         String titleStr = (title != null) ? title.toString().trim() : "";
         String artistStr = (artist != null) ? artist.toString().trim() : "";
-
-        // 재생 상태 확인 (Notification action의 존재로 간접 판별)
         boolean playing = (notification.actions != null && notification.actions.length > 0);
-
-        Log.d(TAG, "미디어 정보: " + titleStr + " - " + artistStr + " (재생중: " + playing + ")");
+        android.media.session.MediaSession.Token token = extras.getParcelable(EXTRA_MEDIA_SESSION);
 
         if (!titleStr.isEmpty()) {
-            broadcastMediaInfo(titleStr, artistStr, playing);
+            broadcastMediaInfo(titleStr, artistStr, playing, token);
         }
+    }
+
+    // ─────────────────────────────────────────────────
+    //  알림 처리 (일반)
+    // ─────────────────────────────────────────────────
+    private void processGeneralNotification(StatusBarNotification sbn) {
+        if (isMediaNotification(sbn)) return;
+        
+        String pkg = sbn.getPackageName();
+        if (pkg == null) return;
+
+        // 1. 패키지 기반 필터링
+        if (IGNORED_PACKAGES.contains(pkg)) return;
+
+        Notification n = sbn.getNotification();
+        Bundle extras = n.extras;
+        if (extras == null) return;
+
+        String title = "";
+        Object titleObj = extras.get(Notification.EXTRA_TITLE);
+        if (titleObj != null) title = titleObj.toString();
+
+        String text = "";
+        Object textObj = extras.get(Notification.EXTRA_TEXT);
+        if (textObj != null) text = textObj.toString();
+
+        // 2. 키워드 기반 필터링
+        String fullContent = (title + " " + text).toLowerCase();
+        for (String keyword : IGNORED_KEYWORDS) {
+            if (fullContent.contains(keyword.toLowerCase())) return;
+        }
+
+        // 3. 진행 중인 알림 제외 (충전, 루틴, 음악 컨트롤 등은 대시보드에 부적절)
+        if ((n.flags & Notification.FLAG_ONGOING_EVENT) != 0) {
+            return;
+        }
+
+        // 앱 이름 가져오기
+        String appName = "";
+        try {
+            appName = getPackageManager().getApplicationLabel(
+                getPackageManager().getApplicationInfo(pkg, 0)
+            ).toString();
+        } catch (Exception e) {
+            appName = pkg;
+        }
+
+        if (title.isEmpty() && text.isEmpty()) return;
+
+        // 아이콘 추출 및 Base64 변환
+        String iconBase64 = "";
+        try {
+            Drawable icon = getPackageManager().getApplicationIcon(sbn.getPackageName());
+            iconBase64 = drawableToBase64(icon);
+        } catch (Exception e) {
+            Log.e(TAG, "아이콘 추출 오류: " + e.getMessage());
+        }
+
+        Intent intent = new Intent(ACTION_NOTI_POSTED);
+        intent.putExtra(EXTRA_NOTI_KEY, sbn.getKey());
+        intent.putExtra(EXTRA_NOTI_APP_NAME, appName);
+        intent.putExtra(EXTRA_NOTI_TITLE, title);
+        intent.putExtra(EXTRA_NOTI_TEXT, text);
+        intent.putExtra(EXTRA_NOTI_ICON, iconBase64);
+        intent.setPackage(getPackageName());
+        sendBroadcast(intent);
+    }
+
+    private String drawableToBase64(Drawable drawable) {
+        if (drawable == null) return "";
+        Bitmap bitmap;
+        if (drawable instanceof BitmapDrawable) {
+            bitmap = ((BitmapDrawable) drawable).getBitmap();
+        } else {
+            if (drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+                bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+            } else {
+                bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            }
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            drawable.draw(canvas);
+        }
+        
+        // 아이콘 크기 최적화 (너무 크면 전송 속도 및 메모리 문제)
+        Bitmap resized = Bitmap.createScaledBitmap(bitmap, 64, 64, true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        resized.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] b = baos.toByteArray();
+        return Base64.encodeToString(b, Base64.NO_WRAP);
     }
 
     /**
      * MediaStyle 알림 여부 판별
-     * - 알림 카테고리가 CATEGORY_TRANSPORT이거나
-     * - extras에 미디어 세션 토큰이 존재하면 미디어 알림으로 판단
      */
     private boolean isMediaNotification(StatusBarNotification sbn) {
         Notification n = sbn.getNotification();
         if (n == null) return false;
 
-        // CATEGORY_TRANSPORT: 미디어 재생 컨트롤 알림
         if (Notification.CATEGORY_TRANSPORT.equals(n.category)) {
             return true;
         }
 
-        // extras에 미디어 세션이 있는 경우
         Bundle extras = n.extras;
         if (extras != null && extras.containsKey(EXTRA_MEDIA_SESSION)) {
             return true;
@@ -122,12 +237,15 @@ public class MediaNotificationListenerService extends NotificationListenerServic
     // ─────────────────────────────────────────────────
     //  BroadcastIntent 전송
     // ─────────────────────────────────────────────────
-    private void broadcastMediaInfo(String title, String artist, boolean isPlaying) {
+    private void broadcastMediaInfo(String title, String artist, boolean isPlaying, android.media.session.MediaSession.Token token) {
         Intent intent = new Intent(ACTION_MEDIA_UPDATE);
         intent.putExtra(EXTRA_TITLE, title);
         intent.putExtra(EXTRA_ARTIST, artist);
         intent.putExtra(EXTRA_IS_PLAYING, isPlaying);
-        intent.setPackage(getPackageName()); // 보안: 자신의 패키지만 수신
+        if (token != null) {
+            intent.putExtra(EXTRA_MEDIA_SESSION_TOKEN, token);
+        }
+        intent.setPackage(getPackageName());
         sendBroadcast(intent);
     }
 }
