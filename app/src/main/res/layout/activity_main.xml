@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#050505">
+
+    <!--
+        WebView 풀스크린 - 모든 UI는 assets/index.html에서 처리
+        배경색은 흰색 깜빡임 방지를 위해 검정으로 설정
+    -->
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#050505"
+        android:scrollbars="none"
+        android:overScrollMode="never" />
+
+</RelativeLayout>

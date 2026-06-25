@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 배경 원 (블루 글로우) -->
+    <path
+        android:fillColor="#0A84FF"
+        android:pathData="M54,20 a34,34 0 1,1 0,68 a34,34 0 1,1 0,-68z"
+        android:fillAlpha="0.15"/>
+
+    <!-- 시계 모양 (원) -->
+    <path
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="3"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,26 a28,28 0 1,1 0,56 a28,28 0 1,1 0,-56z"/>
+
+    <!-- 시침 -->
+    <path
+        android:strokeColor="#F5F5F7"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,54 L54,36"/>
+
+    <!-- 분침 -->
+    <path
+        android:strokeColor="#F5F5F7"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,54 L66,54"/>
+
+    <!-- 중심점 -->
+    <path
+        android:fillColor="#0A84FF"
+        android:pathData="M54,51 a3,3 0 1,1 0,6 a3,3 0 1,1 0,-6z"/>
+
+</vector>

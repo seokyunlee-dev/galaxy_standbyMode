@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 앱 기본 테마 -->
+    <style name="Theme.GalaxyStandbyMode" parent="Theme.AppCompat.NoActionBar">
+        <!-- 배경 완전 블랙 -->
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:colorBackground">@color/black</item>
+        <item name="colorPrimary">@color/black</item>
+        <item name="colorPrimaryDark">@color/black</item>
+        <item name="colorAccent">#0A84FF</item>
+
+        <!-- 상태바 / 네비게이션바 완전 투명 -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <!-- 전환 애니메이션 없음 (즉시 표시) -->
+        <item name="android:windowAnimationStyle">@null</item>
+
+        <!-- WebView 흰 깜빡임 방지 -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+</resources>
